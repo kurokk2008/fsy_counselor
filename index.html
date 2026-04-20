@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FSY カウンセラープログラムガイド</title>
+<style>
+:root{--card:rgba(255,255,255,.9);--line:#e5eaf3;--text:#172033;--muted:#5f6b85;--accent:#2f6fed;--accent-soft:#eaf1ff;--green-soft:#eaf8f1;--shadow:0 18px 50px rgba(18,30,66,.08);--radius-xl:28px}
+*{box-sizing:border-box} body{margin:0;font-family:"Segoe UI","Hiragino Sans","Yu Gothic UI",sans-serif;background:linear-gradient(180deg,#f8fbff 0%,#eef3ff 45%,#f8fbff 100%);color:var(--text)}
+.container{max-width:1280px;margin:0 auto;padding:24px}
+.hero,.overview,.program-card,.timeline,.footer-banner{border-radius:var(--radius-xl);box-shadow:var(--shadow)}
+.hero{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;padding:32px;background:var(--card);border:1px solid rgba(255,255,255,.9);margin-bottom:24px}
+.pill{display:inline-flex;padding:8px 14px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:700}
+h1{font-size:42px;line-height:1.2;margin:16px 0 0;letter-spacing:-.02em}
+.hero p,.overview-desc,.program-summary,.mini-text,.timeline-summary,.modal-body{color:var(--muted);line-height:1.9}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:22px}
+.stat-card,.focus-panel,.timeline-card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:16px}
+.hero-preview{position:relative;min-height:300px;overflow:hidden;border-radius:var(--radius-xl);background:#0f172a}
+.hero-preview img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.62}
+.hero-overlay{position:absolute;inset:0;background:linear-gradient(180deg,rgba(15,23,42,.12),rgba(15,23,42,.84))}
+.hero-meta{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;padding:24px;color:#fff}
+.focus-tags,.chips,.meta-row,.toolbar-right,.view-switch,.modal-meta{display:flex;flex-wrap:wrap;gap:10px}
+.focus-tag,.chip,.badge{display:inline-flex;align-items:center;padding:8px 12px;border-radius:999px;font-size:12px;font-weight:700}
+.focus-tag{background:rgba(255,255,255,.14);color:#fff}.chip{background:#eef2ff;color:#32405c}.badge{background:#eef3ff;color:#2f4570}.badge.outline{background:#fff;border:1px solid var(--line);color:#49566f}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.day-tabs{display:flex;gap:10px;flex-wrap:wrap;background:rgba(255,255,255,.76);border:1px solid rgba(255,255,255,.95);border-radius:22px;padding:8px}
+.day-tab,.view-button,.detail-button,.modal-close,.top-link{border:none;cursor:pointer;border-radius:14px;padding:12px 16px;font-size:14px;font-weight:700;text-decoration:none}
+.day-tab,.view-button{background:transparent;color:var(--muted)}
+.day-tab.active,.view-button.active,.detail-button,.top-link{background:var(--accent);color:#fff}
+.search-box{position:relative}.search-box input{width:320px;max-width:100%;height:46px;padding:0 18px 0 42px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:14px}
+.search-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#8b95aa}
+.overview{margin-bottom:24px;padding:24px;display:grid;grid-template-columns:1.15fr .85fr;gap:20px;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(255,255,255,.92),rgba(59,130,246,.07));border:1px solid rgba(255,255,255,.95)}
+.cards{display:grid;gap:22px}
+.program-card{overflow:hidden;display:grid;grid-template-columns:.92fr 1.08fr;background:var(--card);border:1px solid rgba(255,255,255,.96)}
+.program-image{min-height:290px;position:relative;overflow:hidden}.program-image img{width:100%;height:100%;object-fit:cover;display:block}
+.image-label{position:absolute;top:16px;left:16px;background:rgba(255,255,255,.9);padding:8px 12px;border-radius:999px;font-size:12px;font-weight:700}
+.program-body{padding:28px}.program-title{margin:0;font-size:30px;line-height:1.3}
+.program-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:18px}.mini-box{border-radius:18px;padding:16px;background:#f8fafc}.mini-box.green{background:var(--green-soft)}.detail-button{margin-top:18px}
+.timeline{background:var(--card);border:1px solid rgba(255,255,255,.96);padding:20px}.timeline-item{display:grid;grid-template-columns:140px 28px 1fr;gap:14px;align-items:start}
+.time-box{background:#f8fafc;border-radius:18px;padding:16px;font-size:14px;font-weight:800;color:#3c4961}.dot-col{position:relative;display:flex;justify-content:center;min-height:100%}.dot{width:16px;height:16px;border-radius:50%;background:#16203a;margin-top:14px;z-index:2}.line{position:absolute;top:28px;bottom:-14px;width:1px;background:#dbe2ef}
+.empty{background:var(--card);border-radius:var(--radius-xl);border:2px dashed #d8dfeb;padding:52px 24px;text-align:center;color:var(--muted)}.footer-banner{margin-top:28px;background:#111a2e;color:#fff;padding:28px}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.58);display:none;align-items:center;justify-content:center;padding:20px;z-index:9999}.modal-overlay.open{display:flex}
+.modal{width:min(980px,100%);max-height:88vh;background:#fff;border-radius:28px;overflow:hidden;box-shadow:0 30px 80px rgba(15,23,42,.28);display:flex;flex-direction:column}
+.modal-header{padding:22px 24px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;align-items:flex-start;background:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%)}
+.modal-title{margin:0;font-size:28px;line-height:1.3}.modal-close{background:#eef2ff;color:#334155}.modal-body{padding:24px;overflow:auto;white-space:pre-wrap;font-size:15px}
+@media (max-width:1024px){.hero,.overview,.program-card{grid-template-columns:1fr}.search-box input{width:100%}.toolbar-right{width:100%}}
+@media (max-width:720px){.container{padding:16px}h1{font-size:32px}.stats,.program-grid{grid-template-columns:1fr}.timeline-item{grid-template-columns:1fr}.dot-col{display:none}.program-title,.modal-title{font-size:24px}}
+</style>
+</head>
+<body>
+<div class="container">
+<section class="hero">
+  <div>
+    <div class="pill">FSY Counselor Program Guide</div>
+    <h1>表示用ページ</h1>
+    <p>このページは <code>data.json</code> を読み込んで表示します。プログラム名や時間は、管理ページから JSON を更新すれば反映できます。</p>
+    <div class="stats">
+      <div class="stat-card"><div>構成</div><strong>data.json 読込</strong></div>
+      <div class="stat-card"><div>更新方法</div><strong>admin.html</strong></div>
+      <div class="stat-card"><div>管理ページ</div><strong><a href="admin.html">開く</a></strong></div>
+    </div>
+  </div>
+  <div class="hero-preview">
+    <img id="heroImage" src="" alt="day preview"><div class="hero-overlay"></div>
+    <div class="hero-meta"><small>現在表示中</small><h2 id="heroDay"></h2><p id="heroSubtitle"></p><div id="heroFocus" class="focus-tags"></div></div>
+  </div>
+</section>
+
+<section class="toolbar">
+  <div id="dayTabs" class="day-tabs"></div>
+  <div class="toolbar-right">
+    <div class="search-box"><span class="search-icon">🔎</span><input id="searchInput" type="text" placeholder="プログラム名やキーワードで検索"></div>
+    <div class="view-switch">
+      <button class="view-button active" data-view="cards">カード表示</button>
+      <button class="view-button" data-view="timeline">タイムライン</button>
+      <a class="top-link" href="admin.html">管理ページ</a>
+    </div>
+  </div>
+</section>
+
+<section class="overview">
+  <div><div style="font-size:13px;font-weight:700;color:#697389;">DAY OVERVIEW</div><h3 id="overviewDay"></h3><div id="overviewSubtitle"></div><div id="overviewDesc" class="overview-desc"></div></div>
+  <div class="focus-panel"><h4>この日の注目ポイント</h4><div id="overviewFocus" class="chips"></div></div>
+</section>
+
+<main id="contentArea"></main>
+
+<section class="footer-banner">
+  <small>運用方法</small>
+  <h4>編集は admin.html、公開反映は data.json の差し替え</h4>
+  <p>GitHub Pages は静的サイトなので、管理ページからサーバー上のデータを直接書き換えることはできません。管理ページで編集したあと、書き出した data.json をリポジトリにアップロードして反映します。</p>
+</section>
+</div>
+
+<div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <div>
+        <h3 id="modalTitle" class="modal-title"></h3>
+        <div class="modal-meta">
+          <span id="modalCategory" class="badge"></span>
+          <span id="modalTime" class="badge outline"></span>
+        </div>
+      </div>
+      <button id="modalClose" class="modal-close">閉じる</button>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+  </div>
+</div>
+
+<script>
+let dayData = [];
+let selectedDay = "";
+let viewMode = "cards";
+let query = "";
+let lastFocusedButton = null;
+
+const dayTabs = document.getElementById("dayTabs");
+const contentArea = document.getElementById("contentArea");
+const searchInput = document.getElementById("searchInput");
+const heroImage = document.getElementById("heroImage");
+const heroDay = document.getElementById("heroDay");
+const heroSubtitle = document.getElementById("heroSubtitle");
+const heroFocus = document.getElementById("heroFocus");
+const overviewDay = document.getElementById("overviewDay");
+const overviewSubtitle = document.getElementById("overviewSubtitle");
+const overviewDesc = document.getElementById("overviewDesc");
+const overviewFocus = document.getElementById("overviewFocus");
+const modalOverlay = document.getElementById("modalOverlay");
+const modalTitle = document.getElementById("modalTitle");
+const modalCategory = document.getElementById("modalCategory");
+const modalTime = document.getElementById("modalTime");
+const modalBody = document.getElementById("modalBody");
+const modalClose = document.getElementById("modalClose");
+
+function escapeHtml(value){return String(value).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+function renderTabs(){
+  dayTabs.innerHTML = "";
+  dayData.forEach(day=>{
+    const button=document.createElement("button");
+    button.className=`day-tab ${day.day===selectedDay?"active":""}`;
+    button.textContent=day.day;
+    button.addEventListener("click",()=>{selectedDay=day.day;renderApp();});
+    dayTabs.appendChild(button);
+  });
+}
+function getActiveDay(){return dayData.find(d=>d.day===selectedDay)||dayData[0]}
+function getFilteredPrograms(activeDay){
+  const q=query.trim().toLowerCase();
+  if(!q)return activeDay.programs;
+  return activeDay.programs.filter(program=>[program.title,program.category,program.summary,program.counselorPoint,...(program.tags||[]),program.detailText||""].join(" ").toLowerCase().includes(q));
+}
+function renderOverview(activeDay){
+  heroImage.src=activeDay.heroImage||"";
+  heroDay.textContent=activeDay.day||"";
+  heroSubtitle.textContent=activeDay.subtitle||"";
+  heroFocus.innerHTML=(activeDay.keyFocus||[]).map(item=>`<span class="focus-tag">${escapeHtml(item)}</span>`).join("");
+  overviewDay.textContent=activeDay.day||"";
+  overviewSubtitle.textContent=activeDay.subtitle||"";
+  overviewDesc.textContent=activeDay.summary||"";
+  overviewFocus.innerHTML=(activeDay.keyFocus||[]).map(item=>`<span class="chip">${escapeHtml(item)}</span>`).join("");
+}
+function openModal(program,buttonEl){
+  lastFocusedButton=buttonEl||null;
+  modalTitle.textContent=program.title||"";
+  modalCategory.textContent=program.category||"";
+  modalTime.textContent=`⏰ ${program.time||""}`;
+  modalBody.textContent=program.detailText||program.summary||"";
+  modalOverlay.classList.add("open");
+  document.body.style.overflow="hidden";
+  modalClose.focus();
+}
+function closeModal(){modalOverlay.classList.remove("open");document.body.style.overflow="";if(lastFocusedButton)lastFocusedButton.focus();}
+function attachDetailHandlers(){
+  document.querySelectorAll("[data-program-title]").forEach(button=>{
+    button.addEventListener("click",()=>{
+      const title=button.getAttribute("data-program-title");
+      const activeDay=getActiveDay();
+      const program=activeDay.programs.find(p=>p.title===title);
+      if(program)openModal(program,button);
+    });
+  });
+}
+function renderCards(programs){
+  if(!programs.length){contentArea.innerHTML='<div class="empty"><div style="font-size:18px;font-weight:800;margin-bottom:8px;">該当するプログラムが見つかりませんでした</div><div>検索キーワードを変えてお試しください。</div></div>';return;}
+  contentArea.innerHTML=`<div class="cards">${programs.map(program=>`
+    <article class="program-card">
+      <div class="program-image">
+        <img src="${escapeHtml(program.image||'')}" alt="${escapeHtml(program.title)}">
+        <div class="image-label">イメージ</div>
+      </div>
+      <div class="program-body">
+        <div class="meta-row">
+          <span class="badge">${escapeHtml(program.category||"")}</span>
+          <span class="badge outline">⏰ ${escapeHtml(program.time||"")}</span>
+        </div>
+        <h3 class="program-title">${escapeHtml(program.title||"")}</h3>
+        <div class="program-summary">${escapeHtml(program.summary||"")}</div>
+        <div class="program-grid">
+          <div class="mini-box"><div style="font-weight:800;margin-bottom:10px;">このプログラムの理解</div><div class="mini-text">参加者にとってどんな意味を持つ時間かを意識して関わることで、プログラムの質が大きく変わります。</div></div>
+          <div class="mini-box green"><div style="font-weight:800;margin-bottom:10px;">カウンセラーのポイント</div><div class="mini-text">${escapeHtml(program.counselorPoint||"")}</div></div>
+        </div>
+        <div class="chips" style="margin-top:16px;">${(program.tags||[]).map(tag=>`<span class="chip">${escapeHtml(tag)}</span>`).join("")}</div>
+        <button class="detail-button" data-program-title="${escapeHtml(program.title||"")}">詳細を開く</button>
+      </div>
+    </article>`).join("")}</div>`;
+  attachDetailHandlers();
+}
+function renderTimeline(programs){
+  if(!programs.length){contentArea.innerHTML='<div class="empty"><div style="font-size:18px;font-weight:800;margin-bottom:8px;">該当するプログラムが見つかりませんでした</div><div>検索キーワードを変えてお試しください。</div></div>';return;}
+  contentArea.innerHTML=`<div class="timeline">${programs.map((program,index)=>`
+    <div class="timeline-item">
+      <div class="time-box">${escapeHtml(program.time||"")}</div>
+      <div class="dot-col"><div class="dot"></div>${index<programs.length-1?'<div class="line"></div>':''}</div>
+      <div class="timeline-card">
+        <span class="badge">${escapeHtml(program.category||"")}</span>
+        <h3 class="program-title" style="font-size:23px; margin-top:12px;">${escapeHtml(program.title||"")}</h3>
+        <div class="timeline-summary">${escapeHtml(program.summary||"")}</div>
+        <div class="mini-box green" style="margin-top:14px;"><div style="font-weight:800;margin-bottom:10px;">カウンセラーのポイント</div><div class="mini-text">${escapeHtml(program.counselorPoint||"")}</div></div>
+        <div class="chips" style="margin-top:14px;">${(program.tags||[]).map(tag=>`<span class="chip">${escapeHtml(tag)}</span>`).join("")}</div>
+        <button class="detail-button" data-program-title="${escapeHtml(program.title||"")}" style="margin-top:16px;">詳細を開く</button>
+      </div>
+    </div>`).join("")}</div>`;
+  attachDetailHandlers();
+}
+function renderApp(){
+  if(!dayData.length)return;
+  const activeDay=getActiveDay();
+  renderTabs();
+  renderOverview(activeDay);
+  const programs=getFilteredPrograms(activeDay);
+  if(viewMode==="cards")renderCards(programs);else renderTimeline(programs);
+  document.querySelectorAll(".view-button").forEach(btn=>btn.classList.toggle("active",btn.dataset.view===viewMode));
+}
+async function loadData(){
+  const res=await fetch("data.json",{cache:"no-store"});
+  dayData=await res.json();
+  selectedDay=dayData[0]?.day||"";
+  renderApp();
+}
+searchInput.addEventListener("input",e=>{query=e.target.value;renderApp();});
+document.querySelectorAll(".view-button").forEach(button=>button.addEventListener("click",()=>{viewMode=button.dataset.view;renderApp();}));
+modalClose.addEventListener("click",closeModal);
+modalOverlay.addEventListener("click",e=>{if(e.target===modalOverlay)closeModal();});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&modalOverlay.classList.contains("open"))closeModal();});
+loadData().catch(err=>{contentArea.innerHTML=`<div class="empty">data.json の読み込みに失敗しました。<br>${escapeHtml(err.message)}</div>`;});
+</script>
+</body>
+</html>

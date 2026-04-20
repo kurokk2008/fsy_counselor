@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FSY 管理ページ</title>
+<style>
+:root{--bg:#f7f9fc;--card:#fff;--line:#dde5f0;--text:#172033;--muted:#607089;--accent:#2f6fed;--shadow:0 16px 40px rgba(18,30,66,.08);--radius:20px}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI","Hiragino Sans","Yu Gothic UI",sans-serif;background:linear-gradient(180deg,#f8fbff 0%,#eef3ff 45%,#f8fbff 100%);color:var(--text)}
+.container{max-width:1380px;margin:0 auto;padding:24px}
+.header,.panel,.program-editor{background:rgba(255,255,255,.92);border:1px solid rgba(255,255,255,.95);border-radius:28px;box-shadow:var(--shadow)}
+.header{padding:28px;margin-bottom:20px}
+.header h1{margin:8px 0 0;font-size:36px}
+.header p{color:var(--muted);line-height:1.9;max-width:1000px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+button,.file-label,select{border:none;border-radius:14px;padding:12px 16px;font-size:14px;font-weight:700}
+button,.file-label{cursor:pointer;background:var(--accent);color:#fff}
+button.secondary{background:#eef2ff;color:#334155}
+button.warn{background:#ef4444;color:#fff}
+select{background:#fff;border:1px solid var(--line);color:#111827}
+.layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
+.panel{padding:18px}
+.panel h2{margin:0 0 14px;font-size:18px}
+.day-list,.program-list{display:flex;flex-direction:column;gap:10px}
+.day-item,.program-item{padding:12px 14px;border-radius:14px;background:#f8fafc;border:1px solid #edf2f8;cursor:pointer}
+.day-item.active,.program-item.active{background:#eaf1ff;border-color:#bdd2ff}
+.program-editor{padding:22px}
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.field{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.field.full{grid-column:1 / -1}
+label{font-size:13px;font-weight:700;color:#4b5563}
+input,textarea{width:100%;border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;font-family:inherit;background:#fff}
+textarea{min-height:100px;resize:vertical}
+.small{color:var(--muted);font-size:13px;line-height:1.7}
+.topline{display:flex;justify-content:space-between;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+.badge{display:inline-flex;padding:7px 10px;border-radius:999px;background:#eef2ff;color:#334155;font-size:12px;font-weight:700}
+.hidden{display:none}
+@media (max-width:1000px){.layout{grid-template-columns:1fr}.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <section class="header">
+    <div class="badge">管理ページ</div>
+    <h1>プログラム名・時間・説明を編集する</h1>
+    <p>このページでは <code>data.json</code> を編集できます。GitHub Pages は静的サイトなので、このページで直接公開中のサイトを保存更新することはできません。編集後に <strong>Export data.json</strong> で書き出し、そのファイルを GitHub の <code>data.json</code> と差し替える流れです。</p>
+    <div class="actions">
+      <button id="loadDefaultBtn" class="secondary">現在の data.json を読み込む</button>
+      <label class="file-label secondary" style="background:#eef2ff;color:#334155">
+        JSON を読み込む
+        <input id="importInput" type="file" accept=".json,application/json" class="hidden">
+      </label>
+      <button id="exportBtn">Export data.json</button>
+      <button id="downloadBackupBtn" class="secondary">バックアップ保存</button>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2>日程</h2>
+      <div id="dayList" class="day-list"></div>
+      <div class="small" style="margin-top:14px;">左で日を選び、次にプログラムを選ぶと右側で編集できます。</div>
+    </aside>
+
+    <section class="panel">
+      <div class="topline">
+        <div>
+          <h2 style="margin:0;">プログラム一覧</h2>
+          <div id="selectedDayLabel" class="small"></div>
+        </div>
+        <div class="actions" style="margin-top:0;">
+          <button id="addProgramBtn" class="secondary">プログラム追加</button>
+          <button id="deleteProgramBtn" class="warn">選択中を削除</button>
+        </div>
+      </div>
+      <div id="programList" class="program-list"></div>
+    </section>
+  </div>
+
+  <section class="program-editor" style="margin-top:20px;">
+    <div class="topline">
+      <div>
+        <h2 id="editorTitle" style="margin:0 0 6px;">編集項目</h2>
+        <div class="small">ここで内容を変更すると、メモリ上のデータにすぐ反映されます。</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div class="field">
+        <label for="titleInput">プログラム名</label>
+        <input id="titleInput" type="text">
+      </div>
+      <div class="field">
+        <label for="timeInput">時間</label>
+        <input id="timeInput" type="text">
+      </div>
+      <div class="field">
+        <label for="categoryInput">カテゴリ</label>
+        <input id="categoryInput" type="text">
+      </div>
+      <div class="field">
+        <label for="imageInput">画像URL</label>
+        <input id="imageInput" type="text">
+      </div>
+      <div class="field full">
+        <label for="summaryInput">概要</label>
+        <textarea id="summaryInput"></textarea>
+      </div>
+      <div class="field full">
+        <label for="pointInput">カウンセラーのポイント</label>
+        <textarea id="pointInput"></textarea>
+      </div>
+      <div class="field full">
+        <label for="detailInput">詳細モーダル本文</label>
+        <textarea id="detailInput" style="min-height:220px;"></textarea>
+      </div>
+      <div class="field full">
+        <label for="tagsInput">タグ（カンマ区切り）</label>
+        <input id="tagsInput" type="text">
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+let data = [];
+let selectedDayIndex = 0;
+let selectedProgramIndex = 0;
+
+const dayList = document.getElementById("dayList");
+const programList = document.getElementById("programList");
+const selectedDayLabel = document.getElementById("selectedDayLabel");
+const editorTitle = document.getElementById("editorTitle");
+
+const titleInput = document.getElementById("titleInput");
+const timeInput = document.getElementById("timeInput");
+const categoryInput = document.getElementById("categoryInput");
+const imageInput = document.getElementById("imageInput");
+const summaryInput = document.getElementById("summaryInput");
+const pointInput = document.getElementById("pointInput");
+const detailInput = document.getElementById("detailInput");
+const tagsInput = document.getElementById("tagsInput");
+
+function getSelectedDay(){ return data[selectedDayIndex]; }
+function getSelectedProgram(){
+  const day = getSelectedDay();
+  if(!day || !day.programs.length) return null;
+  return day.programs[selectedProgramIndex];
+}
+
+function renderDays(){
+  dayList.innerHTML = "";
+  data.forEach((day, index) => {
+    const div = document.createElement("div");
+    div.className = `day-item ${index === selectedDayIndex ? "active" : ""}`;
+    div.textContent = `${day.day}｜${day.subtitle || ""}`;
+    div.addEventListener("click", () => {
+      selectedDayIndex = index;
+      selectedProgramIndex = 0;
+      renderAll();
+    });
+    dayList.appendChild(div);
+  });
+}
+
+function renderPrograms(){
+  const day = getSelectedDay();
+  selectedDayLabel.textContent = day ? `${day.day} のプログラムを編集中` : "";
+  programList.innerHTML = "";
+  if(!day) return;
+  if(selectedProgramIndex >= day.programs.length) selectedProgramIndex = Math.max(0, day.programs.length - 1);
+  day.programs.forEach((program, index) => {
+    const div = document.createElement("div");
+    div.className = `program-item ${index === selectedProgramIndex ? "active" : ""}`;
+    div.textContent = `${program.time || ""}｜${program.title || "無題"}`;
+    div.addEventListener("click", () => {
+      selectedProgramIndex = index;
+      renderAll();
+    });
+    programList.appendChild(div);
+  });
+}
+
+function renderEditor(){
+  const program = getSelectedProgram();
+  if(!program){
+    editorTitle.textContent = "編集項目";
+    titleInput.value = "";
+    timeInput.value = "";
+    categoryInput.value = "";
+    imageInput.value = "";
+    summaryInput.value = "";
+    pointInput.value = "";
+    detailInput.value = "";
+    tagsInput.value = "";
+    return;
+  }
+  editorTitle.textContent = `${program.title || "無題"} を編集中`;
+  titleInput.value = program.title || "";
+  timeInput.value = program.time || "";
+  categoryInput.value = program.category || "";
+  imageInput.value = program.image || "";
+  summaryInput.value = program.summary || "";
+  pointInput.value = program.counselorPoint || "";
+  detailInput.value = program.detailText || "";
+  tagsInput.value = (program.tags || []).join(", ");
+}
+
+function renderAll(){
+  renderDays();
+  renderPrograms();
+  renderEditor();
+}
+
+function bindInputs(){
+  titleInput.addEventListener("input", () => updateProgram("title", titleInput.value));
+  timeInput.addEventListener("input", () => updateProgram("time", timeInput.value));
+  categoryInput.addEventListener("input", () => updateProgram("category", categoryInput.value));
+  imageInput.addEventListener("input", () => updateProgram("image", imageInput.value));
+  summaryInput.addEventListener("input", () => updateProgram("summary", summaryInput.value));
+  pointInput.addEventListener("input", () => updateProgram("counselorPoint", pointInput.value));
+  detailInput.addEventListener("input", () => updateProgram("detailText", detailInput.value));
+  tagsInput.addEventListener("input", () => {
+    const p = getSelectedProgram();
+    if(!p) return;
+    p.tags = tagsInput.value.split(",").map(v => v.trim()).filter(Boolean);
+    renderPrograms();
+  });
+}
+
+function updateProgram(field, value){
+  const p = getSelectedProgram();
+  if(!p) return;
+  p[field] = value;
+  renderPrograms();
+  if(field === "title") editorTitle.textContent = `${value || "無題"} を編集中`;
+}
+
+async function loadDefaultData(){
+  const res = await fetch("data.json", { cache: "no-store" });
+  data = await res.json();
+  selectedDayIndex = 0;
+  selectedProgramIndex = 0;
+  renderAll();
+}
+
+document.getElementById("loadDefaultBtn").addEventListener("click", () => {
+  loadDefaultData().catch(err => alert("読み込み失敗: " + err.message));
+});
+
+document.getElementById("importInput").addEventListener("change", async (e) => {
+  const file = e.target.files?.[0];
+  if(!file) return;
+  const text = await file.text();
+  data = JSON.parse(text);
+  selectedDayIndex = 0;
+  selectedProgramIndex = 0;
+  renderAll();
+});
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "data.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById("downloadBackupBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `data-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+document.getElementById("addProgramBtn").addEventListener("click", () => {
+  const day = getSelectedDay();
+  if(!day) return;
+  day.programs.push({
+    title: "新しいプログラム",
+    time: "時間未設定",
+    category: "未分類",
+    image: "",
+    summary: "",
+    counselorPoint: "",
+    detailText: "",
+    tags: []
+  });
+  selectedProgramIndex = day.programs.length - 1;
+  renderAll();
+});
+
+document.getElementById("deleteProgramBtn").addEventListener("click", () => {
+  const day = getSelectedDay();
+  if(!day || !day.programs.length) return;
+  const target = getSelectedProgram();
+  if(!confirm(`「${target?.title || "このプログラム"}」を削除しますか？`)) return;
+  day.programs.splice(selectedProgramIndex, 1);
+  selectedProgramIndex = Math.max(0, selectedProgramIndex - 1);
+  renderAll();
+});
+
+bindInputs();
+loadDefaultData().catch(err => alert("初期読み込み失敗: " + err.message));
+</script>
+</body>
+</html>
